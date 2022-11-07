@@ -6,6 +6,7 @@ Simple real estate agency website with NFTs listed as properties made using reac
 - Connect to the dapp with metamask with the account that is third in the hardhat list, it represents the Inpection of the property and press "Approve inspection on selected property", it will allow the property to be sold because it "passed inspection"
 - Connect to the dapp with metamask with the account that is fourth in the hardhat list, it represents the lender of the remaining 50% of the total price, and press "Approve & lend" on the selected property, it will transfer the remaining 50% needed to the contract
 - Connect to the dapp with metamask with the account that is second in the hardhat list, it represents the seller, and once you click "Approve & sell" with seller, property is then sold and ether is tranferred to the seller's wallet and NFT to buyers wallet
+- If you did everything right once you refresh the page instead of the button saying "Buy" now it should say "Owned by {buyerAddress}"
 
 ## Technologies
 - Javascript
