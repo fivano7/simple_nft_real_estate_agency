@@ -1,0 +1,108 @@
+import { useEffect, useState } from 'react';
+import { ethers } from 'ethers';
+
+// Components
+import Navigation from './components/Navigation';
+import Search from './components/Search';
+import Home from './components/Home';
+
+// ABIs
+import RealEstateNFT from './abis/RealEstateNFT.json'
+import Escrow from './abis/Escrow.json'
+
+// Config
+import config from './config.json';
+
+function App() {
+
+  const [escrowInstance, setEscrowInstance] = useState(null)
+  const [provider, setProvider] = useState(null)
+
+  const [account, setAccount] = useState(null)
+  const [homes, setHomes] = useState([]) //JSON podaci
+  const [home, setHome] = useState({})
+  const [toggle, setToggle] = useState(false)
+
+  //async function loadBlockchainData() {
+  const loadBlockchainData = async () => {
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    setProvider(provider)
+
+    const network = await provider.getNetwork()
+
+    //adresa contracta, sam Contract, provider
+    const realEstateInstance = new ethers.Contract("0x5fbdb2315678afecb367f032d93f642f64180aa3", RealEstateNFT, provider)
+    console.log("tokenID", await realEstateInstance.tokenURI(1))
+    const totalSupply = await realEstateInstance.totalSupply();
+    const homes = []
+
+    for (let i = 1; i <= totalSupply; i++) {
+      const uri = await realEstateInstance.tokenURI(i) 
+      const response = await fetch(uri)
+      const metadata = await response.json()
+      homes.push(metadata)
+    }
+
+    setHomes(homes)
+
+    const escrowInstance = new ethers.Contract(config[network.chainId].escrowInstance.address, Escrow, provider);
+    setEscrowInstance(escrowInstance)
+
+
+    window.ethereum.on('accountsChanged', async () => {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+      const account = ethers.utils.getAddress(accounts[0]) //accounts[0] je trenutni uvijek
+      setAccount(account)
+    })
+
+  }
+
+  useEffect(() => {
+    loadBlockchainData();
+  }, [])
+
+  const togglePop = (home) => {
+    setHome(home)
+    toggle ? setToggle(false) : setToggle(true)
+  }
+
+  return (
+
+    <div>
+      <Navigation account={account} setAccount={setAccount} />
+      <Search />
+      <div className='cards__section'>
+
+        <h3>Homes for you</h3>
+        <hr />
+        <div className='cards'>
+          {/* JSON podaci, (, a ne { jer podrazumjeva implicitnu return value */}
+          {homes.map((home, index) => (
+            <div className='card' key={index} onClick={() => togglePop(home)}>
+              <div className='card__image'>
+                <img src={home.image} alt="Home" />
+              </div>
+              <div className='card__info'>
+                <h4>{home.attributes[0].value} ETH</h4>
+                <p>
+                  <strong>{home.attributes[2].value}</strong>bds |
+                  <strong>{home.attributes[3].value}</strong> bd |
+                  <strong>{home.attributes[4].value}</strong> sqmt |
+                </p>
+                <p>{home.address}</p>
+              </div>
+            </div>
+          ))}
+
+        </div>
+      </div>
+
+      {toggle && (
+        <Home home={home} provider={provider} account={account} escrowInstance={escrowInstance} togglePop={togglePop}/>
+      )}
+
+    </div>
+  );
+}
+
+export default App;
